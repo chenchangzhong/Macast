@@ -395,7 +395,7 @@ class MPVRenderer(Renderer):
                 params += [
                     '--ontop-level=system',
                     '--on-all-workspaces',
-                    '--macos-app-activation-policy=accessory',
+                    '--macos-app-activation-policy=regular',
                 ]
 
             # set hardware
@@ -441,10 +441,15 @@ class MPVRenderer(Renderer):
         self.ipc_thread = threading.Thread(target=self.start_ipc, name="MPV_IPC_THREAD")
         self.ipc_thread.start()
 
-    def stop(self):
+    def stop(self, notify_gui=True):
         """Stop mpv and mpv ipc
+        :param notify_gui: if True, publish renderer_av_stop event
+                           reload() sets False to avoid macOS GUI thread crash
         """
-        super(MPVRenderer, self).stop()
+        if notify_gui:
+            super(MPVRenderer, self).stop()
+        else:
+            self.running = False
         logger.info("stoping mpv and mpv ipc")
         # stop mpv
         self.send_command(['quit'])
@@ -458,6 +463,7 @@ class MPVRenderer(Renderer):
         # stop mpv ipc
         self.ipc_running = False
         self.ipc_thread.join()
+
 
     def reload(self):
         """Reload MPV
@@ -479,7 +485,7 @@ class MPVRenderer(Renderer):
             cherrypy.engine.unsubscribe('mpvipc_start', loadfile)
 
         def restart():
-            self.stop()
+            self.stop(notify_gui=False)
             self.start()
 
         if self.protocol.get_state_transport_state() == 'PLAYING':
@@ -603,6 +609,14 @@ class MPVRendererSetting(RendererSetting):
     def on_renderer_ontop_clicked(self, item):
         item.checked = not item.checked
         Setting.set(SettingProperty.PlayerOntop, 1 if item.checked else 0)
+        # Use IPC to set ontop at runtime — avoid restarting mpv (crashes on macOS)
+        renderers = cherrypy.engine.publish('get_renderer')
+        if renderers:
+            renderer = renderers[0]
+            ok = renderer.send_command(['set_property', 'ontop', 'yes' if item.checked else 'no'])
+            if ok:
+                return
+        # Fallback: restart if IPC unavailable
         self.reloadPlayer()
 
     def on_renderer_position_clicked(self, item):
