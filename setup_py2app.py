@@ -20,7 +20,7 @@ OPTIONS = {
     'plist': {
         'LSUIElement': True,
         'NSHighResolutionCapable': True,
-        'LSMinimumSystemVersion': '10.12.0',
+        'LSMinimumSystemVersion': '11.0',
         'CFBundleIdentifier': 'cn.xfangfang.Macast',
         'NSHumanReadableCopyright': copyright,
         'CFBundleShortVersionString': str(VERSION),

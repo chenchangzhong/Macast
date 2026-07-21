@@ -101,13 +101,20 @@ class MPVRenderer(Renderer):
     def set_media_url(self, url, start="0"):
         """ data : string
         """
-        options = {'start': start}
+        options = {}
         player_size = Setting.get(SettingProperty.PlayerSize,
                                   default=SettingProperty.PlayerSize_Normal.value)
         if player_size == SettingProperty.PlayerSize_FullScreen.value:
             options['fullscreen'] = 'yes'
-        self.send_command(['loadfile', url, 'replace',
-                           ','.join([f'{i}={options[i]}' for i in options])])
+        if start and str(start) != "0":
+            options['start'] = str(start)
+        opt_str = ','.join([f'{k}={v}' for k, v in options.items()]) if options else ''
+        # mpv 0.41+ loadfile 格式: [url, flags, index, options]
+        # index=0 (replace模式忽略), options 是逗号分隔的 opt=value
+        if opt_str:
+            self.send_command(['loadfile', url, 'replace', 0, opt_str])
+        else:
+            self.send_command(['loadfile', url, 'replace'])
 
     def set_media_title(self, data):
         """ data : string
@@ -254,7 +261,10 @@ class MPVRenderer(Renderer):
     def send_command(self, command):
         """Sending command to mpv
         """
-        logger.debug("send command: " + str(command))
+        logger.debug("mpv send_command: " + str(command))
+        if self.ipc_sock is None:
+            logger.error("mpv ipc socket is None, command not sent: " + str(command))
+            return False
         data = {"command": command}
         msg = json.dumps(data) + '\n'
         with self.command_lock:
@@ -263,9 +273,10 @@ class MPVRenderer(Renderer):
                     self.ipc_sock.send_bytes(msg.encode())
                 else:
                     self.ipc_sock.sendall(msg.encode())
+                logger.debug("mpv command sent OK: " + str(command[:2]) + "...")
                 return True
             except Exception as e:
-                logger.error('sendCommand: ' + str(e))
+                logger.error('mpv sendCommand error: ' + str(e))
                 return False
 
     def start_ipc(self):
@@ -340,9 +351,7 @@ class MPVRenderer(Renderer):
                 '--image-display-duration=inf',
                 '--idle=yes',
                 '--no-terminal',
-                '--on-all-workspaces',
                 '--hwdec=yes',
-                '--save-position-on-quit=yes',
                 '--script-opts=osc-timetotal=yes,osc-layout=bottombar,' +
                 'osc-title=${title},osc-showwindowed=yes,' +
                 'osc-seekbarstyle=bar,osc-visibility=auto'
@@ -463,7 +472,7 @@ class MPVRenderer(Renderer):
             if len(protocols) > 0:
                 protocol = protocols.pop()
                 position = protocol.get_state_position()
-                self.send_command(['loadfile', uri, 'replace', f'start={position}'])
+                self.send_command(['loadfile', uri, 'replace', 0, f'start={position}'])
             else:
                 self.send_command(['loadfile', uri, 'replace'])
             self.send_command(['set_property', 'title', self.title])

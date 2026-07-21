@@ -5,3 +5,4 @@ requests
 rumps
 pyperclip
 netifaces
+py2app>=0.28

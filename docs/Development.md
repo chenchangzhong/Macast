@@ -1,39 +1,44 @@
-# Macast Development
+# Macast 开发指南
 
-On windows and Linux, we use **pystray**  to add menubar icon support, and use **pyinstaller** to package application.
-We use **rumps** and **py2app** on MacOS which have better performance and smaller package size.
+在 Windows 和 Linux 上，我们使用 **pystray** 实现菜单栏图标支持，使用 **pyinstaller** 打包应用。
+macOS 则使用 **rumps** 和 **py2app**，性能更好且打包体积更小。
 
+> **Apple Silicon (M 系列) 用户请注意**：macOS 构建已默认支持 Apple Silicon 原生 arm64 架构，
+> 构建脚本会自动在 CI runner 上安装原生 arm64 的 mpv。
 
-## Development under MacOS
+---
 
-### 1. download mpv
+## macOS 开发指南
+
+### 1. 下载 mpv
 
 ```shell
-wget https://laboratory.stolendata.net/~djinn/mpv_osx/mpv-latest.tar.gz
-mkdir -p bin && tar --strip-components 2 -C bin -xzvf mpv-latest.tar.gz mpv.app/Contents/MacOS
+brew install mpv
+mkdir -p bin/MacOS && cp "$(brew --prefix mpv)/bin/mpv" bin/MacOS/mpv
 ```
 
-### 2. debug
+### 2. 调试
 
 ```shell
 pip install -r requirements/darwin.txt
 python Macast.py
 ```
 
-### 3. package
+### 3. 打包
 
 ```shell
 pip install py2app
-pip install setuptools==44.0.0 # try this if you cannot run Macast.app
-python setup.py py2app
+pip install setuptools==44.0.0 # 如果 Macast.app 无法运行可尝试此版本
+python setup_py2app.py py2app
 cp -R bin dist/Macast.app/Contents/Resources/
 open dist
 ```
 
+---
 
-## Development under Windows
+## Windows 开发指南
 
-### 1. download mpv
+### 1. 下载 mpv
 
 ```powershell
 $client = new-object System.Net.WebClient
@@ -41,39 +46,40 @@ $client.DownloadFile('https://nchc.dl.sourceforge.net/project/mpv-player-windows
 7z x -obin mpv.7z *.exe
 ```
 
-### 2. debug
+### 2. 调试
 
 ```powershell
 pip install -r requirements/common.txt
 python Macast.py
 ```
 
-### 3. package
+### 3. 打包
 
 ```powershell
 pip install pyinstaller
 pyinstaller --noconfirm -F -w --additional-hooks-dir=. --add-data=".version;." --add-data="macast/xml/*;macast/xml"  --add-data="i18n/zh_CN/LC_MESSAGES/*.mo;i18n/zh_CN/LC_MESSAGES" --add-data="assets/*;assets" --add-binary="bin/mpv.exe;bin" --icon=assets/icon.ico Macast.py
 ```
 
+---
 
-## Development under Linux (example: Ubuntu)
+## Linux 开发指南（以 Ubuntu 为例）
 
-### 1. install mpv
+### 1. 安装 mpv
 
 ```shell
 sudo apt install mpv
 ```
 
-### 2. debug
+### 2. 调试
 
 ```shell
 pip install -r requirements/common.txt
 python Macast.py
-# if there is something wrong, try this:
+# 如果有问题，尝试：
 export PYSTRAY_BACKEND=gtk && python3 Macast.py
 ```
 
-Tips: Make sure you can use **gi**:
+提示：确保能使用 **gi** 库：
 
 ```
 $ python3
@@ -83,20 +89,19 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 ```
 
-if there is something wrong, try: **sudo apt-get install python3-gi**
+如果有问题，尝试：**sudo apt-get install python3-gi**
 
-if you use conda, check this https://stackoverflow.com/a/40303128
+如果使用 conda，请参考：https://stackoverflow.com/a/40303128
 
-For details of GUI support, please refer to: https://pystray.readthedocs.io/en/latest/usage.html#selecting-a-backend
+GUI 后端支持的详细信息，请参考：https://pystray.readthedocs.io/en/latest/usage.html#selecting-a-backend
 
-
-### 3. package
+### 3. 打包
 
 ```shell
-# build binary
+# 构建二进制
 pip install pyinstaller
 pyinstaller --noconfirm -F -w --additional-hooks-dir=. --add-data=".version:." --add-data="macast/xml/*:macast/xml"  --add-data="i18n/zh_CN/LC_MESSAGES/*.mo:i18n/zh_CN/LC_MESSAGES" --add-data="assets/*:assets" Macast.py
-# build deb
+# 构建 deb 包
 export VERSION=`cat .version`
 mkdir -p dist/DEBIAN
 mkdir -p dist/usr/bin
@@ -109,11 +114,9 @@ cp assets/icon.png dist/usr/share/icons/Macast.png
 dpkg -b dist Macast-v${VERSION}.deb
 ```
 
+### 4. 使用 Docker 构建（感谢 **cdrx/docker-pyinstaller**）
 
-### 4. build with docker (Thanks to **cdrx/docker-pyinstaller**)
-
-Not sure whether it can run normally, used to add support for older versions of Linux.
-
+不确定是否能正常运行，用于为旧版 Linux 添加支持。
 
 ```shell
 cp requirements/common.txt requirements.txt

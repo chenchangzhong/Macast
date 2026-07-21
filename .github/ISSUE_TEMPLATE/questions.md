@@ -10,7 +10,7 @@ assignees: ''
 ## Versions
 
 - System version: (eg:11.4)
-- Processor architecture: (eg:X86)
+- Processor architecture: (eg:ARM64)
 - APP version: (eg: v0.2)
 
 ## Problem

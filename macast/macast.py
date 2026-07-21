@@ -429,7 +429,7 @@ class Macast(App):
             _("Copy Video URI"),
             key="c",
             callback=lambda _: pyperclip.copy(uri))
-        self.append_menu_item_after(self.toggle_menuitem.id, self.copy_menuitem)
+        self.append_menu_item_after(self.toggle_menuitem.text, self.copy_menuitem)
 
     # The followings are the callback function of menu click
 

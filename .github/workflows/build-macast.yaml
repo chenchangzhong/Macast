@@ -30,9 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
 
       - name: Version
         run: |
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Requirement
         run: |
@@ -117,14 +117,14 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
       - name: Upload dist linux x64
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST_AMD64 }}
           path: ${{ env.DIST_AMD64 }}
 
       - name: Upload dist deb
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST_AMD64_DEB }}
@@ -134,7 +134,7 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Requirement
         run: |
@@ -161,45 +161,45 @@ jobs:
           echo "::set-output name=status::success"
 
       - name: Upload dist
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST_EXE }}
           path: ${{ env.DIST_EXE }}
 
       - name: Upload dist debug
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST_EXE_DEBUG }}
           path: ${{ env.DIST_EXE_DEBUG }}
 
   build-darwin:
-    runs-on: macos-11
+    runs-on: macos-14
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: install create-dmg
         run: brew install create-dmg
 
       - name: install universal python
         run: |
-          wget https://www.python.org/ftp/python/3.9.8/python-3.9.8-macos11.pkg
-          sudo installer -pkg python-3.9.8-macos11.pkg -target /
+          wget https://www.python.org/ftp/python/3.11.8/python-3.11.8-macos11.pkg
+          sudo installer -pkg python-3.11.8-macos11.pkg -target /
 
       - name: Install Requirement
         run: |
           pip3 install -r requirements/darwin.txt
           pip3 install py2app
-          wget https://laboratory.stolendata.net/~djinn/mpv_osx/mpv-latest.tar.gz
-          mkdir -p bin && tar --strip-components 2 -C bin -xzvf mpv-latest.tar.gz mpv.app/Contents/MacOS
+          brew install mpv
+          mkdir -p bin/MacOS && cp "$(brew --prefix mpv)/bin/mpv" bin/MacOS/mpv
 
       - name: Build
         id: compile
         run: |
           for file in i18n/*; do msgfmt -o $file/LC_MESSAGES/macast.mo $file/LC_MESSAGES/macast.po;echo $file;done
-          python3 setup_py2app.py py2app --arch=x86_64
+          python3 setup_py2app.py py2app --arch=arm64
           cp -R bin dist/Macast.app/Contents/Resources/
           export VERSION=`cat macast/.version`
           echo "DIST_DMG=Macast-MacOS-v${VERSION}.dmg" >> $GITHUB_ENV
@@ -215,7 +215,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
       - name: Upload dist
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST_DMG }}
@@ -225,7 +225,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Requirement
         run: |
@@ -234,11 +234,11 @@ jobs:
           docker pull xfangfang/build-macast
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Build
         id: compile
@@ -276,14 +276,14 @@ jobs:
           echo "::set-output name=status::success"
 
       - name: Upload dist linux
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST }}
           path: ${{ env.DIST }}
 
       - name: Upload dist deb
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: steps.compile.outputs.status == 'success'
         with:
           name: ${{ env.DIST_DEB }}
